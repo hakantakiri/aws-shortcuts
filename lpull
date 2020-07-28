@@ -1,0 +1,61 @@
+#! /usr/bin/env python3
+
+import sys, json,  subprocess, urllib.request
+
+input_args = sys.argv 
+
+required_inputs_object = {
+            "function_name": ""
+        }
+final_zip_name = "code.zip" 
+
+required_inputs_json = json.dumps(required_inputs_object)
+required_inputs = json.loads(required_inputs_json)
+req_inputs = required_inputs
+
+
+if (len(input_args)-1 < len(req_inputs)):
+    print("Error: There should be at least %i input parameters." % (len(req_inputs)))
+else:
+
+    #Copying data from input args to 
+    function_name = input_args[1] 
+
+    print("function_name is : %s" % (function_name))
+
+    aws_arguments = [
+            "aws",
+            "lambda",
+            "get-function",
+            "--function-name=",
+            ]
+    
+    aws_arguments[3] += function_name
+
+    #print("Role is: " + role)
+    response = subprocess.run(aws_arguments, stdout=subprocess.PIPE)
+    #print(response.stdout)
+
+    output = response.stdout
+
+    outputJson = output.decode("utf-8").replace("'", '"')
+    #outputObject = json.dumps(outputString)
+    dataLoad = json.loads(outputJson)
+    #dataJson = json.dumps(dataLoad, indent=4, sort_keys=True)
+    print("Location: ")
+    print(dataLoad["Code"]["Location"])
+    code_url = dataLoad["Code"]["Location"]
+    print("Downloading...")
+    urllib.request.urlretrieve(code_url, final_zip_name)
+    print("Download completed.")
+
+    print("Unziping the file...")
+    response = subprocess.run(["unzip", "-o", final_zip_name], stdout=subprocess.PIPE)
+    print("Unzip completed.")
+        
+    response = subprocess.run(["rm", "-r", final_zip_name], stdout=subprocess.PIPE)
+    print()
+    
+    #print(response.stdout)
+    #for index in range(0, len(aws_arguments)):
+    #    print("arg %i is %s" % (index,aws_arguments[index]) )
