@@ -11,4 +11,4 @@ sudo cp ./lpull /usr/local/bin/lpull
 sudo cp ./lupdate /usr/local/bin/lupdate
 
 echo "Setup finshed!"
-echo "Start a new terminals session for changes to be applied"
+echo "Start a new terminal session for changes to be applied"
