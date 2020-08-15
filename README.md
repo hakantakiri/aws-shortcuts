@@ -11,7 +11,3 @@ It uses your current aws-cli configuration
 ```lupdate <lambda_name>```
 
 
-
-
-
-## Push code to 
