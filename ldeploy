@@ -1,0 +1,99 @@
+#! /usr/bin/env python3
+
+import sys, json, subprocess, urllib.request, argparse
+
+# const variables
+_upload_zip_name = "upload_code.zip"
+_default_profile = "default"
+
+# Exclusion files
+_default_excluding_files = ["./.env", "./tests/*", "./.git/*"]    
+    
+
+def main() :
+
+    args = buildParser()
+
+    function_name = args.lambda_function
+
+    excluding_files =_default_excluding_files
+
+    zip_cmd = buildZipCommand( excluding_files )
+    upload_cmd = buildUploadCommand(function_name, "prd", "us-east-1")
+
+    zipPackage(zip_cmd)
+    uploadPackage(upload_cmd)
+
+    deleteTemporalZip()
+
+
+# Defining build functions
+
+def buildZipCommand ( excluding_list = None ) :
+
+    print('Received excluding_list: {}'.format(excluding_list))
+
+    _initial_zip_cmd = ["zip","-r", _upload_zip_name, '.']
+
+    if excluding_list is not None : 
+        _initial_zip_cmd.append("-x")
+        _initial_zip_cmd.extend(excluding_list)
+        
+    return _initial_zip_cmd
+    
+
+def buildUploadCommand (function_name, profile = None, region = None) :
+
+    _initial_upload_cmd = ["aws","lambda","update-function-code","--function-name=","--zip-file=fileb://./"]
+
+    _initial_upload_cmd[3] += function_name
+    _initial_upload_cmd[4] += _upload_zip_name 
+
+    if profile is not  None :
+        _initial_upload_cmd.extend(["--profile", profile])
+
+    if region is not  None :
+        _initial_upload_cmd.extend(["--region", region])
+        
+    return _initial_upload_cmd
+
+# Zipping function
+def zipPackage (zip_cmd) :
+    print("Zipping current code. Applying exclusion if given ..." )
+    response = subprocess.run(zip_cmd, stdout=subprocess.PIPE)
+    print("Zipping completed.")
+    return
+
+# Upload function
+def uploadPackage( upload_cmd ) :
+    print("Executing aws lambda update-function-code ...")
+    
+    response = subprocess.run(upload_cmd, stdout=subprocess.PIPE)
+
+    if response.returncode != 0 :
+        #print(response)
+        print("❌ Error updating function")
+        
+    else:
+        print("✅ Succesfully updated")
+
+    return
+    
+
+def deleteTemporalZip():
+    print("Deleting temporal zip package created...")
+    response = subprocess.run(["rm", "-r", _upload_zip_name], stdout=subprocess.PIPE)
+    print("Deletion completed.")
+
+# Defining parser
+def buildParser() :
+    parser = argparse.ArgumentParser(description="Depploy code from dev to prd into aws lambda")
+    parser.add_argument("lambda_function", help="Lambda function name")
+
+    args  = parser.parse_args()
+    # print (args)
+    return args
+
+# Main excecution
+if __name__ == '__main__' :
+    main()
